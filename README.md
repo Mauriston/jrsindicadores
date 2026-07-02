@@ -1,37 +1,45 @@
-# Painel de Indicadores JRS/HNRe
+# Painel de Indicadores e Resultados — JRS/HNRe
 
-Painel web estático para monitoramento de indicadores assistenciais e de gestão do JRS/HNRe.
+Dashboard estático (HTML autocontido) dos indicadores do Programa Netuno da Junta
+Regular de Saúde do Hospital Naval de Recife. Lê os dados ao vivo de um Web App do
+Google Apps Script; sem conexão, usa o snapshot embutido.
 
-## Publicação (GitHub Pages)
+## Publicação no GitHub Pages
 
-O painel é um único arquivo `index.html` (autossuficiente, usa apenas Chart.js via CDN) e
-pode ser publicado diretamente pelo GitHub Pages.
+Pré-requisito: ter implantado o Web App (Apps Script) e colado a URL `/exec` em
+`CONFIG.WEB_APP_URL`, no topo do `<script>` do `index.html`.
 
-Para habilitar o Pages:
-
-1. No repositório: **Settings → Pages**.
-2. Em **Build and deployment → Source**, selecione **Deploy from a branch**.
-3. Escolha o branch `main` e a pasta `/ (root)`, e clique em **Save**.
-4. Após alguns instantes, o painel ficará disponível em
-   `https://mauriston.github.io/jrsindicadores/`.
-
-Alternativamente, via `gh` CLI (na sua máquina local, com o CLI autenticado):
+### Opção A — GitHub CLI (`gh`), em um bloco
 
 ```bash
-gh api -X POST repos/Mauriston/jrsindicadores/pages \
-  -f "source[branch]=main" -f "source[path]=/"
+mkdir jrsindicadores && cd jrsindicadores
+# copie o index.html (e este README) para dentro desta pasta
+git init -b main
+git add .
+git commit -m "Painel de Indicadores JRS/HNRe"
+gh repo create jrsindicadores --public --source=. --remote=origin --push
+# habilita o GitHub Pages na branch main (raiz):
+gh api -X POST repos/{OWNER}/jrsindicadores/pages -f "source[branch]=main" -f "source[path]=/"
 ```
 
-## Editando os indicadores
+Troque `{OWNER}` pelo seu usuário/organização. Em ~1 min o site fica em:
+`https://{OWNER}.github.io/jrsindicadores/`
 
-Os dados exibidos são **dados de exemplo**. Para usar valores reais, edite o objeto
-`DADOS` no `<script>` do arquivo `index.html`.
+### Opção B — pela web
 
-## Desenvolvimento local
+1. Crie o repositório **jrsindicadores** (público).
+2. Faça upload do `index.html` (e do README) na raiz.
+3. **Settings › Pages › Build and deployment › Source: Deploy from a branch** →
+   branch **main**, pasta **/(root)** → Save.
+4. Acesse `https://{OWNER}.github.io/jrsindicadores/`.
 
-Basta abrir `index.html` no navegador, ou servir a pasta:
+## Atualização dos dados
 
-```bash
-python3 -m http.server 8000
-# acesse http://localhost:8000
-```
+- O painel relê a planilha ao carregar, ao focar a aba, a cada 2 min e no botão ↻.
+- Para trocar a fonte, edite `CONFIG.WEB_APP_URL` no `index.html` e faça novo commit.
+
+## Observações
+
+- O fetch anônimo do Web App funciona bem servido em **https** (Pages). Em `file://`
+  local alguns navegadores bloqueiam a chamada e o painel cai no snapshot.
+- O Web App expõe apenas números agregados (contagens, %, finalidades).
