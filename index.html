@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Indicadores e Resultados · JRS/HNRe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Carlito:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+  :root{
+    --navy:#121C4B; --navy-2:#1c2a63; --gold:#FAB932; --green:#079558;
+    --amber:#FAB932; --red:#85200c; --mon:#1c4587;
+    --bg:#eef1f6; --card:#ffffff; --ink:#1a2033; --ink-2:#5b6478; --line:#e3e7ef;
+    --radius:16px; --gap:18px;
+    /* MD3 elevation + motion */
+    --elev1:0 1px 2px rgba(18,28,75,.10),0 1px 3px 1px rgba(18,28,75,.06);
+    --elev3:0 2px 6px 2px rgba(18,28,75,.10),0 4px 10px rgba(18,28,75,.12);
+    --ease:cubic-bezier(.2,0,0,1);
+    --shadow:var(--elev1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Carlito","Calibri",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  h1,.panel h3,.tsec h3,.kpi .val{font-family:"Montserrat","Carlito",sans-serif;}
+  .micon{font-family:"Material Symbols Outlined";font-weight:normal;font-style:normal;
+    font-size:21px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;
+    -webkit-font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;
+    display:inline-flex;flex:0 0 auto;color:var(--navy);}
+  .wrap{max-width:1280px;margin:0 auto;padding:20px;}
+  /* Header */
+  .head{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;
+    border-radius:var(--radius);padding:18px 24px;margin-bottom:var(--gap);
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:60;overflow:hidden;
+    box-shadow:0 4px 18px rgba(18,28,75,.22);}
+  .head::after{content:"";position:absolute;left:24px;bottom:0;width:120px;height:4px;background:var(--gold);border-radius:4px 4px 0 0;}
+  .head .brand{display:flex;flex-direction:column;gap:3px}
+  .head h1{font-size:23px;font-weight:800;margin:0 0 2px;line-height:1.12;letter-spacing:-.3px;color:var(--gold)}
+  .head .org{font-size:14px;font-weight:700;color:#fff;letter-spacing:.2px}
+  .head .org2{font-size:13px;font-weight:400;color:rgba(255,255,255,.8)}
+  .head .sub{font-size:13px;color:rgba(255,255,255,.75)}
+  .filters{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  .fgroup{display:flex;flex-direction:column;gap:5px}
+  .fgroup label{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.7)}
+  .fgroup select{padding:9px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12);color:#fff;font-size:14px;font-weight:600;min-width:170px;cursor:pointer}
+  .fgroup select option{background:var(--navy);color:#fff}
+  .upd{display:flex;align-items:center;gap:8px}
+  .rbtn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:34px;border-radius:9px;
+    border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;
+    transition:background .2s var(--ease)}
+  .rbtn:hover{background:rgba(255,255,255,.22)}
+  .rbtn .micon{font-size:20px;color:#fff}
+  .rbtn.spin .micon{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .dstatus{font-size:11px;color:rgba(255,255,255,.72);max-width:160px;line-height:1.25}
+  .dstatus.live{color:#bfe9cf}
+  .dstatus.err{color:#ffd0c4}
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+  .kpi{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--elev1);
+    border-left:5px solid var(--navy);position:relative;min-width:0;overflow:hidden;
+    transition:box-shadow .28s var(--ease),transform .28s var(--ease);
+    animation:mdEnter .34s var(--ease) both}
+  .kpi:hover{box-shadow:var(--elev3);transform:translateY(-3px)}
+  .kpi.b{border-left-color:var(--green)} .kpi.a{border-left-color:var(--amber)}
+  .kpi.i{border-left-color:var(--red)} .kpi.m{border-left-color:var(--mon)}
+  .kpi .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-2);margin-bottom:8px;font-weight:700}
+  .kpi .val{font-family:"Montserrat","Carlito",sans-serif;font-size:32px;font-weight:800;line-height:1;letter-spacing:-.5px;color:var(--navy);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .kpi .meta{font-size:12px;color:var(--ink-2);margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  @keyframes mdEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .delta{font-weight:700;font-size:12px}
+  .delta.up{color:var(--green)} .delta.down{color:var(--red)} .delta.flat{color:var(--ink-2)}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff}
+  .pill.Bom{background:var(--green)} .pill.Atenção{background:var(--amber);color:#5a3d00}
+  .pill.Inaceitável{background:var(--red)} .pill.Monitoramento{background:var(--mon)}
+  /* Charts */
+  .grid{display:grid;gap:var(--gap);margin-bottom:var(--gap)}
+  .g2{grid-template-columns:1.4fr 1fr}
+  .g2b{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .panel{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--elev1);min-width:0;
+    transition:box-shadow .28s var(--ease),transform .28s var(--ease);animation:mdEnter .34s var(--ease) both}
+  .panel:hover{box-shadow:var(--elev3);transform:translateY(-2px)}
+  .panel h3{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:9px}
+  .panel .hint{font-size:12px;color:var(--ink-2);margin:0 0 14px}
+  .cwrap{position:relative;height:320px}
+  .cwrap.tall{height:420px}
+  /* Legend */
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  /* Table */
+  .tsec{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--elev1);overflow-x:auto;
+    animation:mdEnter .34s var(--ease) both}
+  .tsec h3{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:9px}
+  .tsec .hint{font-size:12px;color:var(--ink-2);margin:0 0 14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--ink-2);
+    font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;user-select:none}
+  thead th:hover{color:var(--navy)}
+  tbody td{padding:10px 12px;border-bottom:1px solid #f1f3f8;vertical-align:middle}
+  tbody tr:hover{background:#f7f9fc}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--ink-2)}
+  .num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:#eef1f8;color:var(--navy)}
+  .tag.esf{background:#fff3d6;color:#7a5600} .tag.ctx{background:#e8ecf7;color:#1c4587}
+  .ind-name{display:inline-flex;align-items:center;gap:7px}
+  .info-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+    border-radius:50%;background:#e3e7ef;color:var(--navy);font:italic 700 10px "Times New Roman",serif;
+    cursor:help;flex:0 0 auto;transition:background .15s,color .15s}
+  .info-ic:hover,.info-ic:focus{background:var(--gold);color:#5a3d00;outline:none}
+  .pill[data-tip]{cursor:help}
+  .tip{position:fixed;z-index:200;max-width:300px;background:var(--navy);color:#fff;
+    font-size:12px;line-height:1.5;padding:9px 12px;border-radius:9px;
+    box-shadow:0 8px 24px rgba(18,28,75,.28);display:none;pointer-events:none;white-space:normal}
+  .tip b{color:var(--gold)}
+  .foot{margin-top:16px;font-size:12px;color:var(--ink-2);line-height:1.6;text-align:right}
+  .foot b{color:var(--navy)}
+  @media(max-width:1080px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.g3{grid-template-columns:1fr}}
+  @media(max-width:900px){.g2,.g2b{grid-template-columns:1fr}}
+  @media(max-width:680px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:430px){.kpis{grid-template-columns:minmax(0,1fr)}}
+  @media print{body{background:#fff}.filters{display:none}.panel,.kpi,.tsec{box-shadow:none;border:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="brand">
+      <h1>Painel de Indicadores e Resultados</h1>
+      <span class="org">Hospital Naval de Recife</span>
+      <span class="org2">Junta Regular de Saúde</span>
+    </div>
+    <div class="filters">
+      <div class="fgroup">
+        <label for="mes">Mês de referência</label>
+        <select id="mes"></select>
+      </div>
+      <div class="fgroup">
+        <label for="tipo">Tipo de indicador</label>
+        <select id="tipo">
+          <option value="Todos">Todos</option>
+          <option value="Resultado">Resultado</option>
+          <option value="Esforço">Esforço</option>
+          <option value="Contexto">Contexto</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Atualização</label>
+        <div class="upd">
+          <button id="btnRefresh" class="rbtn" title="Buscar dados atuais da planilha"><span class="micon">sync</span></button>
+          <span id="dataStatus" class="dstatus">snapshot local</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid">
+    <div class="panel">
+      <h3><span class="micon">bar_chart</span><span id="c1title">Indicadores (%) frente à meta</span></h3>
+      <div class="cwrap tall"><canvas id="chartInd"></canvas></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--green)"></i>Bom</span>
+        <span><i class="dot" style="background:var(--amber)"></i>Atenção</span>
+        <span><i class="dot" style="background:var(--red)"></i>Inaceitável</span>
+        <span><i class="dot" style="background:var(--mon)"></i>Monitoramento</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h3><span class="micon">analytics</span>Volume mensal de IS — 2026 × 2025</h3>
+      <div class="cwrap"><canvas id="chartVol"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid g3">
+    <div class="panel">
+      <h3><span class="micon">traffic</span>Semáforo dos indicadores</h3>
+      <div class="cwrap"><canvas id="chartSem"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3><span class="micon">pie_chart</span>IS concluídas — JRS × MPI</h3>
+      <div class="cwrap"><canvas id="chartPie"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3><span class="micon">donut_large</span><span id="finTitle">Finalidades das IS</span></h3>
+      <div class="cwrap"><canvas id="chartFinal"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h3><span class="micon">replay</span>Retrabalho pericial (%) por mês</h3>
+      <p class="hint">Restituições da Auditoria (I13) e da JSD (I15) e o índice global (I19). Meta: ≤10%.</p>
+      <div class="cwrap"><canvas id="chartRet"></canvas></div>
+    </div>
+  </section>
+
+  <section class="tsec">
+    <h3><span class="micon">table_chart</span><span id="ttitle">Detalhamento dos indicadores</span></h3>
+    <table id="tbl">
+      <thead><tr>
+        <th data-k="codigo">Cód.</th>
+        <th data-k="nome">Indicador</th>
+        <th data-k="tipo">Tipo</th>
+        <th data-k="valor" class="num">Valor</th>
+        <th data-k="delta" class="num">Δ mês ant.</th>
+        <th data-k="status">Status</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="foot"><b>Fonte:</b> SINAIS</div>
+  </section>
+
+</div>
+
+<script>
+/* ================== CONFIGURAÇÃO ==================
+ * Cole a URL /exec do Web App do Apps Script (implantação como App da Web).
+ * Deixe "" para usar apenas o snapshot embutido (modo offline / autocontido). */
+const CONFIG = {
+  WEB_APP_URL: "",            // ex.: "https://script.google.com/macros/s/XXXX.../exec"
+  AUTO_REFRESH_MS: 120000     // reconsulta a planilha a cada 2 min (0 = desativa)
+};
+/* ================================================= */
+
+/* ============ Dados extraídos da planilha (snapshot / fallback) ============ */
+const IND = [
+  {codigo:"I1", nome:"Taxa de cancelamento por não comparecimento", tipo:"Resultado", proc:"4.1", formula:"V3 ÷ V1 × 100", meta:"≤5% bom · 5–10% atenção · >10% inaceitável", pct:true},
+  {codigo:"I2", nome:"Taxa de comparecimento no prazo", tipo:"Resultado", proc:"4.1", formula:"V2 ÷ V1 × 100", meta:"≥90% bom · 80–90% atenção · <80% inaceitável", pct:true},
+  {codigo:"I4", nome:"% de cancelamentos tramitados no prazo", tipo:"Esforço", proc:"4.1", formula:"V6 ÷ V3 × 100", meta:"≥95% bom · 85–95% atenção · <85% inaceitável", pct:true},
+  {codigo:"I10", nome:"Taxa de conclusão no prazo (20 dias)", tipo:"Resultado", proc:"1.", formula:"R10 ÷ (R1+R2) × 100", meta:"≥90% bom · 80–90% atenção · <80% inaceitável", pct:true},
+  {codigo:"I11", nome:"% de MSG de conclusão no prazo (10 dias úteis)", tipo:"Esforço", proc:"1.", formula:"R9 ÷ (R1+R2) × 100", meta:"≥95% bom · 85–95% atenção · <85% inaceitável", pct:true},
+  {codigo:"I12", nome:"Taxa de homologação pela Auditoria", tipo:"Resultado", proc:"1.", formula:"R5 ÷ R3 × 100", meta:"≥90% bom · 80–90% atenção · <80% inaceitável", pct:true},
+  {codigo:"I13", nome:"Taxa de restituição pela Auditoria (retrabalho)", tipo:"Resultado", proc:"1.", formula:"R4 ÷ R3 × 100", meta:"≤10% bom · 10–20% atenção · >20% inaceitável", pct:true},
+  {codigo:"I14", nome:"Taxa de homologação pela JSD", tipo:"Resultado", proc:"1.", formula:"R8 ÷ R6 × 100", meta:"≥90% bom · 80–90% atenção · <80% inaceitável", pct:true},
+  {codigo:"I15", nome:"Taxa de restituição pela JSD (retrabalho)", tipo:"Resultado", proc:"1.", formula:"R7 ÷ R6 × 100", meta:"≤10% bom · 10–20% atenção · >20% inaceitável", pct:true},
+  {codigo:"I16", nome:"Taxa de encaminhamento à Auditoria", tipo:"Contexto", proc:"1.", formula:"R3 ÷ (R1+R2) × 100", meta:"Monitoramento (sem meta)", pct:true},
+  {codigo:"I17", nome:"Taxa de encaminhamento à JSD", tipo:"Contexto", proc:"1.", formula:"R6 ÷ (R1+R2) × 100", meta:"Monitoramento (sem meta)", pct:true},
+  {codigo:"I18", nome:"Distribuição de conclusões MPI × JRS", tipo:"Contexto", proc:"1.", formula:"R1 ÷ (R1+R2) × 100", meta:"Monitoramento (sem meta)", pct:true},
+  {codigo:"I19", nome:"Índice global de retrabalho pericial", tipo:"Resultado", proc:"1.", formula:"(R4+R7) ÷ (R3+R6) × 100", meta:"≤10% bom · 10–20% atenção · >20% inaceitável", pct:true},
+  {codigo:"I20", nome:"Taxa de conclusão do Exame de Sanidade (AO)", tipo:"Resultado", proc:"2.", formula:"AO2 ÷ AO1 × 100", meta:"≥90% bom · 75–90% atenção · <75% inaceitável", pct:true},
+  {codigo:"I21", nome:"AO pendentes de Exame de Sanidade (estoque)", tipo:"Contexto", proc:"2.", formula:"AO1 − AO2", meta:"Monitoramento — tendência não crescente", pct:false},
+  {codigo:"I22", nome:"IS pendentes na JSD (estoque)", tipo:"Contexto", proc:"1.", formula:"R6 − (R7+R8)", meta:"Monitoramento — tendência não crescente", pct:false},
+];
+
+/* Resultados mensais: valor (numérico) + status conforme apurado na planilha */
+let RES = [
+  { ref:"2026-05", nome:"Maio 2026", data:"31/05/2026",
+    vars:{V1:175,V2:144,V3:20,V6:18,R1:23,R2:121,R3:37,R4:16,R5:31,R6:6,R7:0,R8:6,R9:144,R10:140,AO1:3,AO2:0},
+    ind:{
+      I1:{v:11.4,s:"Inaceitável"}, I2:{v:82.3,s:"Atenção"}, I4:{v:90.0,s:"Atenção"},
+      I10:{v:97.2,s:"Bom"}, I11:{v:100.0,s:"Bom"}, I12:{v:83.8,s:"Atenção"},
+      I13:{v:43.2,s:"Inaceitável"}, I14:{v:100.0,s:"Bom"}, I15:{v:0.0,s:"Bom"},
+      I16:{v:25.7,s:"Monitoramento"}, I17:{v:4.2,s:"Monitoramento"}, I18:{v:16.0,s:"Monitoramento"},
+      I19:{v:37.2,s:"Inaceitável"}, I20:{v:0.0,s:"Inaceitável"},
+      I21:{v:3,s:"Monitoramento"}, I22:{v:0,s:"Monitoramento"}
+    }},
+  { ref:"2026-06", nome:"Junho 2026", data:"30/06/2026",
+    vars:{V1:238,V2:192,V3:8,V6:3,R1:34,R2:166,R3:69,R4:31,R5:49,R6:13,R7:1,R8:8,R9:200,R10:194,AO1:0,AO2:0},
+    ind:{
+      I1:{v:3.4,s:"Bom"}, I2:{v:80.7,s:"Atenção"}, I4:{v:37.5,s:"Inaceitável"},
+      I10:{v:97.0,s:"Bom"}, I11:{v:100.0,s:"Bom"}, I12:{v:71.0,s:"Inaceitável"},
+      I13:{v:44.9,s:"Inaceitável"}, I14:{v:88.9,s:"Atenção"}, I15:{v:11.1,s:"Atenção"},
+      I16:{v:34.5,s:"Monitoramento"}, I17:{v:6.5,s:"Monitoramento"}, I18:{v:17.0,s:"Monitoramento"},
+      I19:{v:39.0,s:"Inaceitável"}, I20:{v:null,s:null},
+      I21:{v:0,s:"Monitoramento"}, I22:{v:4,s:"Monitoramento"}
+    }},
+];
+
+/* ============ Infra ============ */
+const CLR={Bom:"#079558",Atenção:"#FAB932",Inaceitável:"#85200c",Monitoramento:"#1c4587",none:"#c7ccd8"};
+const MESABREV=["","JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+/* Aba "Finalidades": distribuição mensal das IS por finalidade */
+let FINAL={
+  "2026-06":{"Benefícios":62,"Términos":28,"Licenciamentos":27,"VDF":15,"TTC":14,"Trienal":13,"(Re) Engajamento":12,"Ingresso":11,"Apreciação documental (MPI)":5,"Prorrogações":5,"LTSPF":4,"Controle semestral de Raios-X":3,"Controle Anual de Mergulho":1},
+  "2026-05":{"Benefícios":36,"Términos":15,"Licenciamentos":19,"VDF":8,"TTC":8,"Trienal":8,"Ingresso":42,"LTSPF":8}
+};
+const NAVY="#1c4587";
+const DL=(typeof ChartDataLabels!=="undefined")?[ChartDataLabels]:[];
+let byRef=Object.fromEntries(RES.map(r=>[r.ref,r]));
+const indByCode=Object.fromEntries(IND.map(i=>[i.codigo,i]));
+const fmt=(v,pct)=> v==null? "—" : (pct? v.toFixed(1).replace('.',',')+" %" : String(v));
+const prevRef=ref=>{const i=RES.findIndex(r=>r.ref===ref);return i>0?RES[i-1].ref:null;};
+
+let charts={};
+const $=id=>document.getElementById(id);
+
+/* Popular filtro de meses (preserva a seleção quando os dados são recarregados) */
+const selMes=$("mes");
+function populateMonths(){
+  const cur=selMes.value;
+  const refs=RES.map(r=>r.ref);
+  selMes.innerHTML=`<option value="Todos">Todos os meses</option>`+
+    [...RES].reverse().map(r=>`<option value="${r.ref}">${r.nome}</option>`).join("");
+  selMes.value = (cur && (cur==="Todos"||refs.includes(cur))) ? cur
+               : (RES.length? RES[RES.length-1].ref : "Todos");
+}
+populateMonths();
+
+/* ============ Render ============ */
+function statusOf(code,ref){ return byRef[ref].ind[code]?.s || null; }
+function valOf(code,ref){ const o=byRef[ref].ind[code]; return o? o.v : null; }
+
+function currentDisplayRef(){
+  const m=selMes.value;
+  return m==="Todos" ? RES[RES.length-1].ref : m;
+}
+
+function renderKPIs(){
+  const ref=currentDisplayRef(), r=byRef[ref], pv=prevRef(ref);
+  const concl=r.vars.R1+r.vars.R2;
+  const conclPrev = pv? byRef[pv].vars.R1+byRef[pv].vars.R2 : null;
+  const cards=[];
+  // volume
+  const dc = conclPrev!=null ? concl-conclPrev : null;
+  const mnum=+ref.split("-")[1], anoRef=ref.split("-")[0];
+  cards.push({cls:"m",lbl:"TOTAL DE IS "+MESABREV[mnum]+anoRef,val:String(concl),color:CLR.Monitoramento,
+    meta:`${r.vars.V1} IS abertas`, delta:dc, dpct:false});
+  const kpiCodes=[["I11","MSG TRM NO PRAZO"],["I1","FALTAS"],
+                  ["I12","Homologação Auditoria"],["I19","Retrabalho global"]];
+  kpiCodes.forEach(([c,lbl])=>{
+    const s=statusOf(c,ref), v=valOf(c,ref);
+    const pvv = pv? valOf(c,pv):null;
+    const d = (v!=null&&pvv!=null)? +(v-pvv).toFixed(1):null;
+    const cls = s==="Bom"?"b":s==="Atenção"?"a":s==="Inaceitável"?"i":"m";
+    cards.push({cls,lbl,val:fmt(v,true),color:CLR[s]||"var(--navy)",
+      meta:`<span class="pill ${s}">${s||"—"}</span>`, delta:d, dpct:true,
+      lowerBetter:["I1","I19"].includes(c)});
+  });
+  $("kpis").innerHTML=cards.map(c=>{
+    let dhtml="";
+    if(c.delta!=null){
+      const better = c.lowerBetter ? c.delta<0 : c.delta>0;
+      const dir = c.delta>0?"up":c.delta<0?"down":"flat";
+      const cls = c.delta===0?"flat":(better?"up":"down");
+      const arrow=c.delta>0?"▲":c.delta<0?"▼":"–";
+      const txt=(c.delta>0?"+":"")+(c.dpct? c.delta.toFixed(1).replace('.',',')+" p.p.":c.delta);
+      dhtml=`<span class="delta ${cls}">${arrow} ${txt}</span>`;
+    }
+    return `<div class="kpi ${c.cls}">
+      <div class="lbl">${c.lbl}</div>
+      <div class="val" style="color:${c.color}">${c.val}</div>
+      <div class="meta">${c.meta} ${dhtml}</div></div>`;
+  }).join("");
+}
+
+function filteredIndCodes(){
+  const t=$("tipo").value;
+  return IND.filter(i=>i.pct && (t==="Todos"||i.tipo===t)).map(i=>i.codigo);
+}
+
+function renderChartInd(){
+  const m=selMes.value, codes=filteredIndCodes();
+  const labels=codes.map(c=>c);
+  const ctx=$("chartInd");
+  if(charts.ind) charts.ind.destroy();
+  let datasets;
+  if(m==="Todos"){
+    $("c1title").textContent="Indicadores (%) — comparativo entre meses";
+    datasets=RES.map((r,idx)=>({
+      label:r.nome,
+      data:codes.map(c=>valOf(c,r.ref)),
+      backgroundColor: idx===RES.length-1? NAVY : "#9aa6c8",
+      borderRadius:4, barPercentage:.85, categoryPercentage:.8
+    }));
+  } else {
+    const r=byRef[m];
+    $("c1title").textContent="Indicadores (%) frente à meta — "+r.nome;
+    datasets=[{
+      label:r.nome,
+      data:codes.map(c=>valOf(c,r.ref)),
+      backgroundColor:codes.map(c=>CLR[statusOf(c,r.ref)]||CLR.none),
+      borderRadius:4, barPercentage:.8, categoryPercentage:.85
+    }];
+  }
+  charts.ind=new Chart(ctx,{
+    type:"bar",
+    data:{labels,datasets},
+    options:{
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:m==="Todos"},
+        tooltip:{callbacks:{
+          title:items=>{const c=items[0].label;return c+" — "+indByCode[c].nome;},
+          label:it=>` ${it.dataset.label}: ${it.parsed.x==null?"sem dados":it.parsed.x.toFixed(1).replace('.',',')+" %"}`
+        }}},
+      scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+"%"},grid:{color:"#eef1f6"}},
+              y:{grid:{display:false}}}
+    }
+  });
+}
+
+function renderChartSem(){
+  const ref=currentDisplayRef();
+  const order=["Bom","Atenção","Inaceitável","Monitoramento"];
+  const counts=Object.fromEntries(order.map(s=>[s,0]));
+  IND.forEach(i=>{const s=statusOf(i.codigo,ref); if(s) counts[s]++;});
+  const ctx=$("chartSem");
+  if(charts.sem) charts.sem.destroy();
+  charts.sem=new Chart(ctx,{
+    type:"doughnut",
+    data:{labels:order,datasets:[{data:order.map(s=>counts[s]),
+      backgroundColor:order.map(s=>CLR[s]),borderColor:"#fff",borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
+      plugins:{legend:{position:"bottom",labels:{boxWidth:12,font:{size:12}}},
+        tooltip:{callbacks:{label:it=>` ${it.label}: ${it.parsed} indicador(es)`}}}}
+  });
+}
+
+/* Série anual: 2025 fechado; 2026 histórico (Jan–Jun) sobreposto pela planilha (Jul+ automático) */
+const MESES_FULL=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const VOL2025=[71,92,60,91,93,118,172,132,92,266,96,187];
+const VOL2026_HIST={1:119,2:76,3:69,4:101,5:144,6:200};
+function serie2026(){
+  const arr=[];
+  for(let m=1;m<=12;m++){
+    const ref="2026-"+String(m).padStart(2,"0");
+    const doSheet = byRef[ref] ? byRef[ref].vars.R1+byRef[ref].vars.R2 : null;
+    arr.push(doSheet!=null ? doSheet : (VOL2026_HIST[m]!=null?VOL2026_HIST[m]:null));
+  }
+  return arr;
+}
+
+function renderChartVol(){
+  const d26=serie2026();
+  // barra vermelha (#85200c) quando 2026 fica abaixo do ano anterior; azul (#1c4587) caso contrário
+  const barColors=d26.map((v,i)=> (v!=null && VOL2025[i]!=null && v<VOL2025[i]) ? "#85200c" : "#1c4587");
+  const ctx=$("chartVol");
+  if(charts.vol) charts.vol.destroy();
+  charts.vol=new Chart(ctx,{
+    type:"bar",
+    data:{labels:MESES_FULL,datasets:[
+      {label:"2026",data:d26,backgroundColor:barColors,borderRadius:4,order:1,
+        datalabels:{color:"#fff",anchor:"end",align:"start",offset:3,
+          font:{family:"Montserrat",weight:"bold",size:12},
+          formatter:v=>v==null?null:v}},
+      {label:"2025",data:VOL2025,type:"line",borderColor:"#a9a9a9",backgroundColor:"#a9a9a9",
+        borderWidth:3,tension:.4,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:"#a9a9a9",
+        fill:false,order:2,
+        datalabels:{color:"#8a8a8a",anchor:"end",align:"top",offset:2,
+          font:{family:"Montserrat",weight:"bold",size:11},
+          formatter:v=>v==null?null:v}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:26}},
+      plugins:{
+        legend:{reverse:true,position:"top",labels:{boxWidth:14,font:{size:12},usePointStyle:false}},
+        tooltip:{callbacks:{label:it=>` ${it.dataset.label}: ${it.parsed.y==null?"—":it.parsed.y+" IS"}`}}
+      },
+      scales:{y:{beginAtZero:true,suggestedMax:300,grid:{color:"#eef1f6"}},
+              x:{grid:{display:false},ticks:{font:{size:10}}}}
+    },
+    plugins:DL
+  });
+}
+
+function renderChartFinal(){
+  const ref=currentDisplayRef();
+  const data=FINAL[ref]||{};
+  const entries=Object.entries(data).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const top=entries.slice(0,4), rest=entries.slice(4);
+  const outros=rest.reduce((s,[,v])=>s+v,0);
+  const labels=top.map(([k])=>k), vals=top.map(([,v])=>v);
+  if(outros>0){labels.push("Outros");vals.push(outros);}
+  const total=vals.reduce((a,b)=>a+b,0);
+  const colors=["#1c4587","#85200c","#FAB932","#079558","#8a94ad"];
+  $("finTitle").textContent="Finalidades das IS — "+(byRef[ref]?byRef[ref].nome:ref);
+  const ctx=$("chartFinal");
+  if(charts.fin) charts.fin.destroy();
+  const centerText={id:"finCenter",afterDatasetsDraw(c){
+    const a=c.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,g=c.ctx;
+    g.save();g.textAlign="center";g.textBaseline="middle";
+    g.fillStyle="#079558";g.font="800 38px Montserrat, sans-serif";
+    g.fillText(String(total),x,y);g.restore();
+  }};
+  charts.fin=new Chart(ctx,{
+    type:"doughnut",
+    data:{labels,datasets:[{data:vals,backgroundColor:colors.slice(0,vals.length),
+      borderColor:"#fff",borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",layout:{padding:6},
+      plugins:{
+        legend:{position:"bottom",labels:{boxWidth:12,font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:it=>` ${it.label}: ${it.parsed} IS (${(it.parsed/total*100).toFixed(1).replace('.',',')}%)`}},
+        datalabels:{
+          color:c=> colors[c.dataIndex]==="#FAB932" ? "#5a3d00" : "#fff",
+          font:{family:"Montserrat",weight:"bold",size:12},
+          formatter:v=> (v/total*100).toFixed(1).replace('.',',')+"%"
+        }
+      }},
+    plugins:[...DL,centerText]
+  });
+}
+
+function renderChartPie(){
+  const ref=currentDisplayRef(), r=byRef[ref];
+  const jrs=r.vars.R2, mpi=r.vars.R1, tot=jrs+mpi;
+  const minIdx = jrs<=mpi ? 0 : 1;          // menor fatia
+  const offsets=[0,0]; offsets[minIdx]=30;   // desloca a menor fatia do centro
+  const ctx=$("chartPie");
+  if(charts.pie) charts.pie.destroy();
+  charts.pie=new Chart(ctx,{
+    type:"pie",
+    data:{labels:["IS JRS","IS MPI"],datasets:[{
+      data:[jrs,mpi],
+      backgroundColor:["#1c4587","#FAB932"],
+      borderColor:"#fff",borderWidth:2,offset:offsets,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:"bottom",labels:{boxWidth:12,font:{size:12}}},
+        tooltip:{callbacks:{label:it=>` ${it.label}: ${it.parsed} IS (${(it.parsed/tot*100).toFixed(1).replace('.',',')}%)`}},
+        datalabels:{
+          color:c=> c.dataIndex===1 ? "#5a3d00" : "#fff",
+          textAlign:"center",font:{family:"Montserrat",weight:"bold",size:13},
+          formatter:(v,c)=>{const p=(v/tot*100).toFixed(1).replace('.',','); return c.chart.data.labels[c.dataIndex]+"\n"+v+" ("+p+"%)";}
+        }
+      }},
+    plugins:DL
+  });
+}
+
+function renderChartRet(){
+  const sel=selMes.value;
+  const series=[
+    {label:"I13 Auditoria",code:"I13",color:"#85200c"},
+    {label:"I15 JSD",code:"I15",color:"#FAB932"},
+    {label:"I19 Global",code:"I19",color:NAVY},
+  ];
+  const ctx=$("chartRet");
+  if(charts.ret) charts.ret.destroy();
+  charts.ret=new Chart(ctx,{
+    type:"line",
+    data:{labels:RES.map(r=>r.nome),
+      datasets:series.map(s=>({label:s.label,
+        data:RES.map(r=>valOf(s.code,r.ref)),
+        borderColor:s.color,backgroundColor:s.color+"22",
+        borderWidth:2.5,tension:.25,pointRadius:RES.map(r=> sel!=="Todos"&&r.ref===sel?7:4),
+        pointBackgroundColor:s.color,fill:false}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:it=>` ${it.dataset.label}: ${it.parsed.y==null?"—":it.parsed.y.toFixed(1).replace('.',',')+" %"}`}}},
+      scales:{y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>v+"%"},grid:{color:"#eef1f6"}},
+              x:{grid:{display:false}},
+              }},
+    plugins:[{id:"metaLine",afterDraw(c){const y=c.scales.y,x=c.chartArea;
+        const yy=y.getPixelForValue(10);const g=c.ctx;g.save();g.strokeStyle="#079558";
+        g.setLineDash([5,4]);g.lineWidth=1.5;g.beginPath();g.moveTo(x.left,yy);g.lineTo(x.right,yy);g.stroke();
+        g.setLineDash([]);g.fillStyle="#079558";g.font="11px sans-serif";g.fillText("meta ≤10%",x.left+6,yy-5);g.restore();}}]
+  });
+}
+
+let sortKey="codigo", sortDir=1;
+function renderTable(){
+  const t=$("tipo").value;
+  const ref=currentDisplayRef(), pv=prevRef(ref);
+  $("ttitle").textContent="Detalhamento dos indicadores — "+byRef[ref].nome
+    + (selMes.value==="Todos"?" (mês mais recente)":"");
+  let rows=IND.filter(i=>t==="Todos"||i.tipo===t).map(i=>{
+    const v=valOf(i.codigo,ref), s=statusOf(i.codigo,ref);
+    const pvv=pv?valOf(i.codigo,pv):null;
+    const delta=(v!=null&&pvv!=null)? +(v-pvv).toFixed(1):null;
+    return {...i,valor:v,status:s,delta};
+  });
+  const num=new Set(["valor","delta"]);
+  rows.sort((a,b)=>{
+    let x=a[sortKey],y=b[sortKey];
+    if(num.has(sortKey)){x=x==null?-1e9:x;y=y==null?-1e9:y;return (x-y)*sortDir;}
+    if(sortKey==="codigo"){return (parseInt(a.codigo.slice(1))-parseInt(b.codigo.slice(1)))*sortDir;}
+    return String(x).localeCompare(String(y),"pt")*sortDir;
+  });
+  const tag=t=>t==="Esforço"?'<span class="tag esf">Esforço</span>':t==="Contexto"?'<span class="tag ctx">Contexto</span>':'<span class="tag">Resultado</span>';
+  $("tbl").querySelector("tbody").innerHTML=rows.map(r=>{
+    let d="—";
+    if(r.delta!=null){const arrow=r.delta>0?"▲":r.delta<0?"▼":"–";
+      const lower=["I1","I13","I15","I19","I21"].includes(r.codigo);
+      const better=r.delta===0?null:(lower?r.delta<0:r.delta>0);
+      const cls=r.delta===0?"flat":(better?"up":"down");
+      d=`<span class="delta ${cls}">${arrow} ${(r.delta>0?"+":"")+(r.pct?r.delta.toFixed(1).replace('.',','):r.delta)}</span>`;}
+    const metaTip="Meta / faixas — "+r.meta;
+    const chip = r.status
+      ? `<span class="pill ${r.status}" data-tip="${metaTip}" tabindex="0">${r.status}</span>`
+      : `<span class="pill" style="background:#c7ccd8" data-tip="${metaTip}" tabindex="0">sem dados</span>`;
+    return `<tr>
+      <td><b>${r.codigo}</b></td>
+      <td><span class="ind-name">${r.nome}<span class="info-ic" data-tip="Fórmula — ${r.formula}" tabindex="0" aria-label="Fórmula do indicador">i</span></span>
+          <br><span class="mono" style="font-size:11px">Processo ${r.proc}</span></td>
+      <td>${tag(r.tipo)}</td>
+      <td class="num">${fmt(r.valor,r.pct)}</td>
+      <td class="num">${d}</td>
+      <td>${chip}</td>
+    </tr>`;
+  }).join("");
+}
+
+/* ============ Tooltip flutuante (fórmula / meta) ============ */
+const tipEl=document.createElement("div");tipEl.className="tip";tipEl.setAttribute("role","tooltip");
+document.body.appendChild(tipEl);
+function showTip(text,x,y){
+  tipEl.textContent=text;tipEl.style.display="block";
+  const r=tipEl.getBoundingClientRect(),pad=12;
+  let px=x+16,py=y+16;
+  if(px+r.width>window.innerWidth-pad)px=Math.max(pad,x-r.width-16);
+  if(py+r.height>window.innerHeight-pad)py=Math.max(pad,y-r.height-16);
+  tipEl.style.left=px+"px";tipEl.style.top=py+"px";
+}
+function hideTip(){tipEl.style.display="none";}
+document.addEventListener("mouseover",e=>{const el=e.target.closest("[data-tip]");if(el)showTip(el.getAttribute("data-tip"),e.clientX,e.clientY);});
+document.addEventListener("mousemove",e=>{if(tipEl.style.display==="block"){const el=e.target.closest("[data-tip]");el?showTip(el.getAttribute("data-tip"),e.clientX,e.clientY):hideTip();}});
+document.addEventListener("mouseout",e=>{if(e.target.closest("[data-tip]"))hideTip();});
+document.addEventListener("focusin",e=>{const el=e.target.closest("[data-tip]");if(el){const b=el.getBoundingClientRect();showTip(el.getAttribute("data-tip"),b.left,b.bottom-16);}});
+document.addEventListener("focusout",hideTip);
+
+/* ============ Eventos ============ */
+function renderAll(){renderKPIs();renderChartInd();renderChartSem();renderChartVol();renderChartPie();renderChartFinal();renderChartRet();renderTable();}
+selMes.addEventListener("change",renderAll);
+$("tipo").addEventListener("change",()=>{renderKPIs();renderChartInd();renderTable();});
+document.querySelectorAll("#tbl thead th").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k; if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;} renderTable();
+}));
+renderAll();
+
+/* ============ Carregamento ao vivo (Web App do Apps Script) ============ */
+function aplicarDados(payload){
+  if(!payload || !Array.isArray(payload.meses) || !payload.meses.length) return false;
+  const novosRES=[], novoFINAL={};
+  payload.meses.forEach(m=>{
+    const ind={};
+    IND.forEach(def=>{
+      const o=(m.ind&&m.ind[def.codigo])||{};
+      let v=(o.v===undefined?null:o.v), s=(o.s===undefined?null:o.s);
+      if(v!=null && !s && def.tipo==="Contexto") s="Monitoramento"; // ex.: I22 sem coluna de status
+      ind[def.codigo]={v:v, s:s};
+    });
+    novosRES.push({ref:m.ref, nome:m.nome, data:m.data||"", vars:m.vars||{}, ind:ind});
+    if(m.finalidades && Object.keys(m.finalidades).length) novoFINAL[m.ref]=m.finalidades;
+  });
+  novosRES.sort((a,b)=>a.ref.localeCompare(b.ref));
+  RES=novosRES; FINAL=novoFINAL;
+  byRef=Object.fromEntries(RES.map(r=>[r.ref,r]));
+  populateMonths();
+  return true;
+}
+function marcarStatus(txt,cls){ const el=$("dataStatus"); if(el){ el.textContent=txt; el.className="dstatus"+(cls?" "+cls:""); } }
+function loadLive(){
+  if(!CONFIG.WEB_APP_URL){ marcarStatus("snapshot local",""); return; }
+  const btn=$("btnRefresh"); if(btn) btn.classList.add("spin");
+  marcarStatus("atualizando…","");
+  fetch(CONFIG.WEB_APP_URL,{method:"GET",cache:"no-store",redirect:"follow"})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d && d.ok && aplicarDados(d)){
+        renderAll();
+        const t=new Date(d.atualizadoEm||Date.now());
+        marcarStatus("ao vivo · "+t.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}),"live");
+      } else { marcarStatus("retorno sem dados · usando snapshot","err"); }
+    })
+    .catch(()=>{ marcarStatus("sem conexão · usando snapshot","err"); })
+    .finally(()=>{ if(btn) btn.classList.remove("spin"); });
+}
+const _btn=$("btnRefresh"); if(_btn) _btn.addEventListener("click",loadLive);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadLive(); });
+if(CONFIG.WEB_APP_URL){
+  loadLive();
+  if(CONFIG.AUTO_REFRESH_MS>0) setInterval(()=>{ if(!document.hidden) loadLive(); }, CONFIG.AUTO_REFRESH_MS);
+} else {
+  marcarStatus("snapshot local","");
+}
+</script>
+</body>
+</html>
